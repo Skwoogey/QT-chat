@@ -1,0 +1,46 @@
+#include "tcp_refuse_connection.h"
+
+TCPRefuseConnection::TCPRefuseConnection(QByteArray &a) : TCPMessage(a)
+{
+    msgType = eMessageType::refuseConnection;
+    
+    if(!isValidMessage)
+        return;
+
+    if(msgSize != sizeof(msgSize) + sizeof(msgType) + sizeof(refuseReason))
+    {
+        qDebug() << "ERROR(RefuseConnection): Message size mismatch!"
+                 << "\nlength: " << a.length()
+                 << "\nmsgSize: " << msgSize;
+
+        isValidMessage = false;
+        return;
+    }
+
+    int msgPtr = sizeof(msgSize) + sizeof(msgType);
+
+    refuseReason = *(eRefuseConnectionReason*)getArrayPtr(a, msgPtr);
+}
+
+void TCPRefuseConnection::setReason(TCPRefuseConnection::eRefuseConnectionReason rsn)
+{
+    refuseReason = rsn;
+}
+
+void TCPRefuseConnection::print()
+{
+    qDebug() << "msgSize" << msgSize;
+    qDebug() << "msgType" << msgType;
+
+    qDebug() << "refuseConnectionReason" << refuseReason;
+}
+
+QByteArray TCPRefuseConnection::getInnerByteMessage()
+{
+    QByteArray message(sizeof(refuseReason), Qt::Initialization::Uninitialized);
+
+    int msgPtr = 0;
+    insertIntoArray(message, (char*)&refuseReason, sizeof(refuseReason), msgPtr);
+
+    return message;
+}
